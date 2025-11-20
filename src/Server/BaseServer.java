@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class BaseServer {
-
     private BaseServer() {
     }
 
