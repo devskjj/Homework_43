@@ -2,6 +2,7 @@ package Server;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
@@ -11,32 +12,19 @@ import java.nio.charset.StandardCharsets;
 
 public class Utility {
     public static void initRoutes(HttpServer server) {
-        server.createContext("/", Utility::handleRequest);
-        server.createContext("/apps/", Utility::handleRequest);
-        server.createContext("/apps/profile", Utility::handleRequest);
+        server.createContext("/", exchange -> showRoute(exchange, "Это корневой путь."));
+        server.createContext("/apps/", exchange -> showRoute(exchange, "Это путь приложения."));
+        server.createContext("/apps/profile", exchange -> showRoute(exchange, "Это путь профиля."));
     }
 
-    public static void handleRequest(HttpExchange exchange) {
-        try {
-            exchange.getResponseHeaders().add("Content-Type", "text/plain;charset=UTF-8");
-            int responseCode = 200;
-            int length = 0;
-            exchange.sendResponseHeaders(responseCode, length);
+    private static void showRoute(HttpExchange exchange, String msg) throws IOException {
+        byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
 
-            try (PrintWriter writer = getWriterFrom(exchange)) {
-                String method = exchange.getRequestMethod();
-                URI uri = exchange.getRequestURI();
-                String ctxPath = exchange.getHttpContext().getPath();
+        exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
+        exchange.sendResponseHeaders(200, bytes.length);
 
-                write(writer, "HTTP method", method);
-                write(writer, "Request", uri.toString());
-                write(writer, "Handler", ctxPath);
-                writeHeaders(writer, "Request headers", exchange.getRequestHeaders());
-                writeData(writer, exchange);
-                writer.flush();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        try (OutputStream outputStream = exchange.getResponseBody()) {
+            outputStream.write(bytes);
         }
     }
 
