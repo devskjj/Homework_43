@@ -1,0 +1,80 @@
+package Server;
+
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+
+import java.io.*;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+public class Utility {
+    public static void initRoutes(HttpServer server) {
+        server.createContext("/", Utility::handleRequest);
+        server.createContext("/apps/", Utility::handleRequest);
+        server.createContext("/apps/profile", Utility::handleRequest);
+    }
+
+    public static void handleRequest(HttpExchange exchange) {
+        try {
+            exchange.getResponseHeaders().add("Content-Type", "text/plain;charset=UTF-8");
+            int responseCode = 200;
+            int length = 0;
+            exchange.sendResponseHeaders(responseCode, length);
+
+            try (PrintWriter writer = getWriterFrom(exchange)) {
+                String method = exchange.getRequestMethod();
+                URI uri = exchange.getRequestURI();
+                String ctxPath = exchange.getHttpContext().getPath();
+
+                write(writer, "HTTP method", method);
+                write(writer, "Request", uri.toString());
+                write(writer, "Handler", ctxPath);
+                writeHeaders(writer, "Request headers", exchange.getRequestHeaders());
+                writeData(writer, exchange);
+                writer.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeHeaders(Writer writer, String type, Headers headers) {
+        write(writer, type, "");
+        headers.forEach((k, v) -> write(writer, "\t" + k, v.toString()));
+    }
+
+    public static void write(Writer writer, String msg, String method) {
+        String data = String.format("%s:%s%n%n", msg, method);
+        try {
+            writer.write(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static PrintWriter getWriterFrom(HttpExchange exchange) {
+        OutputStream outputStream = exchange.getResponseBody();
+        Charset charset = StandardCharsets.UTF_8;
+        return new PrintWriter(outputStream, false, charset);
+    }
+
+    public static BufferedReader getReader(HttpExchange exchange) {
+        InputStream inputStream = exchange.getRequestBody();
+        Charset charset = StandardCharsets.UTF_8;
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, charset);
+        return new BufferedReader(inputStreamReader);
+    }
+
+    public static void writeData(Writer writer, HttpExchange exchange) {
+        try (BufferedReader reader = getReader(exchange)) {
+            if (!reader.ready()) return;
+
+            write(writer, "Data", "");
+            reader.lines().forEach(v -> write(writer, "\t", v));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
