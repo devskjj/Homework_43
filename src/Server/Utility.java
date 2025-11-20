@@ -5,7 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Utility {
@@ -27,8 +27,22 @@ public class Utility {
         }
     }
 
+
+
     private static void showRoute(HttpExchange exchange, String msg) throws IOException {
         sendResponse(exchange, 200, msg);
+    }
+
+
+
+    private static void writeFile(HttpExchange exchange, Path filePath, String type) throws IOException {
+        byte[] fileBytes = Files.readAllBytes(filePath);
+        exchange.getResponseHeaders().set("Content-Type", type);
+        exchange.sendResponseHeaders(200, fileBytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(fileBytes);
+        }
     }
 
     private static Path getRequestUrlPath(HttpExchange exchange) {
