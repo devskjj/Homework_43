@@ -27,13 +27,26 @@ public class Utility {
         }
     }
 
-
+    private static void showError(HttpExchange exchange, String msg) throws IOException {
+        sendResponse(exchange, 404, msg);
+    }
 
     private static void showRoute(HttpExchange exchange, String msg) throws IOException {
         sendResponse(exchange, 200, msg);
     }
 
-
+    private static void showFile(HttpExchange exchange) throws IOException {
+        Path filePath = getRequestUrlPath(exchange);
+        if (Files.exists(filePath) && !Files.isDirectory(filePath)) {
+            String type = Files.probeContentType(filePath);
+            if (type == null) {
+                type = "text/plain; charset=UTF-8";
+            }
+            writeFile(exchange, filePath, type);
+        } else {
+            showError(exchange, "Документ не найден");
+        }
+    }
 
     private static void writeFile(HttpExchange exchange, Path filePath, String type) throws IOException {
         byte[] fileBytes = Files.readAllBytes(filePath);
