@@ -11,12 +11,12 @@ import java.nio.file.Path;
 public class Utility {
     public static void initRoutes(HttpServer server) {
         server.createContext("/", exchange -> {
-            String initPath = exchange.getRequestURI().getPath();
-            if (initPath.contains(".")) {
+            String route = exchange.getRequestURI().getPath();
+            if (route.contains(".")) {
                 showFile(exchange);
             }
 
-            if (initPath.equals("/") || initPath.startsWith("/") && !initPath.endsWith("/")) {
+            if (route.equals("/") || route.startsWith("/") && !route.endsWith("/")) {
                 showRoute(exchange, "Это корневой путь.");
             } else {
                 showError(exchange, "Страница не найдена");
